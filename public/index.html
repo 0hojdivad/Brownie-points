@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Brownie Points</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  :root {
+    --bg:#FAF9F6;--surface:#FFF;--border:rgba(0,0,0,0.08);--border-strong:rgba(0,0,0,0.14);
+    --text:#1A1814;--muted:#7A7670;--hint:#B0ACA6;
+    --green:#1E7A52;--green-bg:#E8F5EE;--red:#C0392B;--red-bg:#FDEEEC;
+    --amber:#96600A;--amber-bg:#FEF3E2;--nav-h:60px;--radius:14px;--radius-sm:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:480px;margin:0 auto;}
+  .screen{display:none;padding:1.5rem 1rem calc(var(--nav-h) + 1.5rem);min-height:100vh;}
+  .screen.active{display:block;}
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;height:var(--nav-h);z-index:50;}
+  .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;border:none;background:none;font-family:'DM Sans',sans-serif;color:var(--hint);transition:color 0.15s;padding:0;}
+  .nav-tab.active{color:var(--text);}
+  .nav-icon{font-size:20px;line-height:1;}
+  .nav-label{font-size:10px;font-weight:500;letter-spacing:0.03em;text-transform:uppercase;}
+  h1{font-size:22px;font-weight:600;}
+  .label{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;}
+  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;}
+  .hero{background:var(--text);border-radius:var(--radius);padding:1.75rem 1.5rem;color:white;margin-bottom:1rem;}
+  .hero-label{font-size:12px;opacity:0.55;margin-bottom:6px;}
+  .hero-num{font-size:48px;font-weight:300;font-family:'DM Mono',monospace;line-height:1;}
+  .hero-num.pos{color:#6FDEAB;} .hero-num.neg{color:#F4957F;}
+  .hero-sub{font-size:13px;opacity:0.6;margin-top:8px;}
+  .stat-row{display:flex;gap:10px;margin-bottom:1rem;}
+  .stat-card{flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;}
+  .stat-val{font-size:22px;font-weight:500;font-family:'DM Mono',monospace;margin-top:4px;}
+  .stat-val.pos{color:var(--green);} .stat-val.neg{color:var(--red);}
+  .lb-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border);}
+  .lb-item:last-child{border-bottom:none;}
+  .lb-rank{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;color:var(--muted);width:20px;text-align:center;}
+  .lb-rank.gold{color:#B8860B;} .lb-rank.silver{color:#808080;} .lb-rank.bronze{color:#8B5E3C;}
+  .lb-bar-wrap{flex:1;}
+  .lb-name{font-size:14px;font-weight:500;margin-bottom:5px;}
+  .lb-bar-bg{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;}
+  .lb-bar{height:5px;border-radius:3px;}
+  .lb-bar.pos{background:var(--green);} .lb-bar.neg{background:var(--red);} .lb-bar.zero{background:var(--hint);}
+  .lb-pts{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;min-width:44px;text-align:right;}
+  .lb-pts.pos{color:var(--green);} .lb-pts.neg{color:var(--red);} .lb-pts.zero{color:var(--hint);}
+  .friend-card{display:flex;align-items:center;gap:14px;padding:13px 1.25rem;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:border-color 0.15s;}
+  .friend-card:hover{border-color:var(--border-strong);}
+  .avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0;}
+  .av-teal{background:#D4F0E6;color:#0F6E56;} .av-purple{background:#E8E6FC;color:#4A42B0;}
+  .av-coral{background:#FAE4DC;color:#8B3520;} .av-amber{background:#FDE8C4;color:#7A4D0A;}
+  .av-blue{background:#DCECf8;color:#1A5FA0;} .av-pink{background:#F8DFE9;color:#8B2D56;}
+  .friend-info{flex:1;}
+  .friend-name{font-size:15px;font-weight:500;}
+  .friend-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .badge{font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px;white-space:nowrap;font-family:'DM Mono',monospace;}
+  .badge.pos{background:var(--green-bg);color:var(--green);} .badge.neg{background:var(--red-bg);color:var(--red);} .badge.zero{background:var(--bg);color:var(--muted);}
+  .detail-hero{background:var(--text);border-radius:var(--radius);padding:1.5rem;color:white;margin-bottom:1rem;display:flex;align-items:center;gap:16px;}
+  .detail-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600;flex-shrink:0;}
+  .detail-balance{font-size:36px;font-weight:300;font-family:'DM Mono',monospace;}
+  .detail-balance.pos{color:#6FDEAB;} .detail-balance.neg{color:#F4957F;}
+  .log-item{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:0.5px solid var(--border);}
+  .log-item:last-child{border-bottom:none;}
+  .log-desc{font-size:14px;} .log-date{font-size:12px;color:var(--muted);margin-top:2px;}
+  .log-pts{font-size:14px;font-weight:500;font-family:'DM Mono',monospace;}
+  .log-pos{color:var(--green);} .log-neg{color:var(--red);}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:flex-end;justify-content:center;z-index:200;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--surface);border-radius:20px 20px 0 0;padding:1.5rem 1.25rem 2rem;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;}
+  .sheet-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto 1.25rem;}
+  .sheet h2{font-size:17px;font-weight:600;margin-bottom:4px;}
+  .sheet-sub{font-size:13px;color:var(--muted);margin-bottom:1.25rem;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;}
+  .field input,.field select{width:100%;padding:11px 14px;border:0.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;color:var(--text);background:var(--bg);font-family:'DM Sans',sans-serif;outline:none;}
+  .field input:focus,.field select:focus{border-color:var(--text);}
+  .btn-row{display:flex;gap:10px;margin-top:1.25rem;}
+  .btn-primary{flex:1;padding:13px;background:var(--text);color:white;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-cancel{padding:13px 18px;background:none;border:0.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--muted);}
+  .code-box{background:var(--bg);border:0.5px solid var(--border-strong);border-radius:var(--radius-sm);padding:16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .code-text{font-family:'DM Mono',monospace;font-size:24px;font-weight:500;letter-spacing:0.12em;}
+  .copy-btn{font-size:13px;color:var(--muted);background:none;border:0.5px solid var(--border-strong);border-radius:6px;padding:5px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .share-row{display:flex;gap:8px;margin-bottom:1rem;}
+  .share-pill{flex:1;padding:10px 4px;border:0.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:13px;color:var(--text);background:var(--bg);cursor:pointer;font-family:'DM Sans',sans-serif;text-align:center;}
+  .divider{display:flex;align-items:center;gap:10px;margin:16px 0;}
+  .divider-line{flex:1;height:0.5px;background:var(--border);}
+  .divider-text{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .join-row{display:flex;gap:8px;}
+  .join-row input{flex:1;padding:11px 14px;border:0.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);outline:none;letter-spacing:0.08em;}
+  .join-btn{padding:11px 16px;background:var(--text);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .join-error{font-size:13px;color:var(--red);margin-top:8px;display:none;}
+  .pending-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);}
+  .pending-item:last-child{border-bottom:none;}
+  .accept-btn{font-size:13px;padding:5px 12px;background:var(--green-bg);color:var(--green);border:none;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;margin-right:6px;}
+  .decline-btn{font-size:13px;padding:5px 10px;background:none;color:var(--muted);border:0.5px solid var(--border-strong);border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+  .icon-btn{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);}
+  .back-btn{background:none;border:none;font-size:14px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;}
+  .empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;}
+  .toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;transform:translateX(-50%);background:var(--text);color:white;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:300;white-space:nowrap;}
+  .toast.show{opacity:1;}
+  .section-gap{margin-top:1.25rem;}
+  /* Onboarding */
+  #onboard-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
+  .onboard-logo{font-size:48px;margin-bottom:1rem;}
+  .onboard-title{font-size:26px;font-weight:600;margin-bottom:8px;text-align:center;}
+  .onboard-sub{font-size:15px;color:var(--muted);text-align:center;margin-bottom:2.5rem;line-height:1.6;}
+  .onboard-form{width:100%;max-width:320px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-msg{font-size:13px;color:var(--red);margin-top:8px;display:none;}
+</style>
+</head>
+<body>
+
+<!-- ONBOARDING -->
+<div id="onboard-screen">
+  <div class="onboard-logo">🍫</div>
+  <div class="onboard-title">Brownie Points</div>
+  <div class="onboard-sub">Track favours with friends.<br/>Who owes who — always know.</div>
+  <div class="onboard-form">
+    <div class="field"><label>Your name</label><input id="ob-name" type="text" placeholder="e.g. Alex" /></div>
+    <button class="btn-primary" style="width:100%;" onclick="register()" id="ob-btn">Get started</button>
+    <div class="error-msg" id="ob-error"></div>
+    <div style="margin-top:1.5rem;text-align:center;">
+      <span style="font-size:13px;color:var(--muted);">Already have an account? </span>
+      <button onclick="showLogin()" style="font-size:13px;color:var(--text);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:3px;">Sign in with your ID</button>
+    </div>
+    <div id="login-area" style="display:none;margin-top:1rem;">
+      <div class="field"><label>Your user ID</label><input id="ob-uid" type="text" placeholder="Paste your user ID" /></div>
+      <button class="btn-primary" style="width:100%;" onclick="loginWithId()">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until logged in) -->
+<div id="app" style="display:none;">
+
+  <!-- DASHBOARD -->
+  <div id="dash-screen" class="screen active">
+    <div class="top-row"><h1>Dashboard</h1></div>
+    <div class="hero">
+      <div class="hero-label">Overall balance</div>
+      <div class="hero-num" id="hero-num">+0</div>
+      <div class="hero-sub" id="hero-sub">All square with everyone</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="label">Owe you</div><div class="stat-val pos" id="dash-owe-you">0</div></div>
+      <div class="stat-card"><div class="label">You owe</div><div class="stat-val neg" id="dash-owe-them">0</div></div>
+      <div class="stat-card"><div class="label">Friends</div><div class="stat-val" id="dash-friend-count">0</div></div>
+    </div>
+    <div class="section-gap">
+      <div class="label" style="margin-bottom:10px;">Leaderboard</div>
+      <div class="card"><div id="leaderboard-list"><div class="empty" style="padding:1rem 0;">Add friends to see the leaderboard</div></div></div>
+    </div>
+    <div class="section-gap">
+      <div class="label" style="margin-bottom:10px;">Friend balances</div>
+      <div id="dash-friend-list"></div>
+    </div>
+  </div>
+
+  <!-- FRIENDS -->
+  <div id="friends-screen" class="screen">
+    <div class="top-row">
+      <h1>Friends</h1>
+      <button class="icon-btn" onclick="openInviteSheet()">+ Add friend</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span class="label">Your friends</span>
+      <button class="back-btn" onclick="openInviteSheet()" style="font-size:12px;text-decoration:underline;text-underline-offset:3px;">My invite code</button>
+    </div>
+    <div id="friends-list"></div>
+    <div id="pending-section" style="display:none;margin-top:1.5rem;">
+      <div class="label" style="margin-bottom:10px;">Pending requests</div>
+      <div class="card"><div id="pending-list"></div></div>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="detail-screen" class="screen">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <button class="back-btn" onclick="goFriends()">← Back</button>
+      <button class="icon-btn" onclick="openLogSheet()">+ Log favour</button>
+    </div>
+    <div class="detail-hero">
+      <div class="detail-avatar" id="detail-avatar"></div>
+      <div style="flex:1;">
+        <div style="font-size:17px;font-weight:600;color:white;margin-bottom:3px;" id="detail-name"></div>
+        <div style="font-size:12px;opacity:0.55;" id="detail-label"></div>
+      </div>
+      <div style="text-align:right;">
+        <div class="detail-balance" id="detail-balance"></div>
+        <div style="font-size:11px;opacity:0.5;margin-top:2px;">pts</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="label">They owe you</div><div class="stat-val pos" id="d-owe-you">0</div></div>
+      <div class="stat-card"><div class="label">You owe them</div><div class="stat-val neg" id="d-owe-them">0</div></div>
+    </div>
+    <div class="label" style="margin-bottom:10px;">History</div>
+    <div class="card"><div id="log-list"></div></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div id="profile-screen" class="screen">
+    <div class="top-row"><h1>Profile</h1></div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="label" style="margin-bottom:6px;">Your name</div>
+      <div style="font-size:17px;font-weight:500;" id="profile-name"></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="label" style="margin-bottom:6px;">Your invite code</div>
+      <div class="code-text" id="profile-code" style="font-size:22px;"></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="label" style="margin-bottom:6px;">Your user ID</div>
+      <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted);word-break:break-all;" id="profile-uid"></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;">Save this ID to sign in on another device.</div>
+      <button class="copy-btn" style="margin-top:10px;" onclick="copyUserId()">Copy ID</button>
+    </div>
+    <button class="btn-cancel" style="width:100%;margin-top:0.5rem;" onclick="signOut()">Sign out</button>
+  </div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-tab active" id="nav-dash" onclick="showScreen('dash')">
+      <span class="nav-icon">◈</span><span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-tab" id="nav-friends" onclick="showScreen('friends')">
+      <span class="nav-icon">◎</span><span class="nav-label">Friends</span>
+    </button>
+    <button class="nav-tab" id="nav-profile" onclick="showScreen('profile')">
+      <span class="nav-icon">◉</span><span class="nav-label">Profile</span>
+    </button>
+  </nav>
+</div>
+
+<!-- INVITE SHEET -->
+<div class="overlay" id="invite-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Add a friend</h2>
+    <p class="sheet-sub">Share your code, or enter a friend's code to connect.</p>
+    <div class="label" style="margin-bottom:8px;">Your invite code</div>
+    <div class="code-box">
+      <span class="code-text" id="my-code-display"></span>
+      <button class="copy-btn" id="copy-btn" onclick="copyCode()">Copy</button>
+    </div>
+    <div class="share-row">
+      <button class="share-pill" onclick="shareVia('whatsapp')">WhatsApp</button>
+      <button class="share-pill" onclick="shareVia('sms')">iMessage</button>
+      <button class="share-pill" onclick="shareVia('copy')">Copy link</button>
+    </div>
+    <div class="divider"><div class="divider-line"></div><span class="divider-text">or enter a friend's code</span><div class="divider-line"></div></div>
+    <div class="field" style="margin-bottom:10px;"><label>Friend's name (for your reference)</label><input id="join-name" type="text" placeholder="e.g. Sarah" /></div>
+    <div class="field" style="margin-bottom:0;"><label>Their invite code</label>
+      <div class="join-row">
+        <input id="join-code" type="text" placeholder="BP-XXXX" maxlength="7" oninput="this.value=this.value.toUpperCase()" />
+        <button class="join-btn" onclick="sendFriendRequest()">Connect</button>
+      </div>
+      <div class="join-error" id="join-error"></div>
+    </div>
+    <div class="btn-row"><button class="btn-cancel" onclick="closeOverlay('invite-overlay')" style="flex:1;">Close</button></div>
+  </div>
+</div>
+
+<!-- LOG SHEET -->
+<div class="overlay" id="log-overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <h2>Log a favour</h2>
+    <p class="sheet-sub" id="log-sheet-sub"></p>
+    <div class="field"><label>Description</label><input id="log-desc" type="text" placeholder="e.g. Picked me up from airport" /></div>
+    <div class="field"><label>Direction</label>
+      <select id="log-dir">
+        <option value="1">They did me a favour (+)</option>
+        <option value="-1">I did them a favour (−)</option>
+      </select>
+    </div>
+    <div class="field"><label>Points</label><input id="log-pts" type="number" min="1" value="1" /></div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeOverlay('log-overlay')">Cancel</button>
+      <button class="btn-primary" onclick="logFavour()" id="log-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────────
+const API = ''; // empty = same origin. Set to 'https://your-app.railway.app' if needed
+const avatarColors = ['av-teal','av-purple','av-coral','av-amber','av-blue','av-pink'];
+let currentUser = null;
+let currentFriendId = null;
+let currentFriendData = null;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function initials(n) { return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function bClass(b) { return b>0?'pos':b<0?'neg':'zero'; }
+function bText(b) { return b>0?`+${b}`:b<0?`${b}`:'0'; }
+function colorFor(i) { return avatarColors[i % avatarColors.length]; }
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+async function api(method, path, body) {
+  const opts = {
+    method, headers: { 'Content-Type': 'application/json' }
+  };
+  if (currentUser) opts.headers['X-User-Id'] = currentUser.id;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function loadStoredUser() {
+  try { return JSON.parse(localStorage.getItem('bp_user')); } catch { return null; }
+}
+function storeUser(user) { localStorage.setItem('bp_user', JSON.stringify(user)); }
+function signOut() {
+  localStorage.removeItem('bp_user');
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('onboard-screen').style.display = 'flex';
+}
+
+function showLogin() {
+  document.getElementById('login-area').style.display = 'block';
+}
+
+async function register() {
+  const name = document.getElementById('ob-name').value.trim();
+  if (!name) return;
+  const btn = document.getElementById('ob-btn');
+  btn.innerHTML = '<span class="spinner"></span>Creating account…';
+  btn.disabled = true;
+  try {
+    const user = await api('POST', '/api/users', { name });
+    storeUser(user);
+    currentUser = user;
+    launchApp();
+  } catch(e) {
+    document.getElementById('ob-error').textContent = e.message;
+    document.getElementById('ob-error').style.display = 'block';
+    btn.textContent = 'Get started'; btn.disabled = false;
+  }
+}
+
+async function loginWithId() {
+  const id = document.getElementById('ob-uid').value.trim();
+  if (!id) return;
+  try {
+    const fakeUser = { id };
+    currentUser = fakeUser;
+    const user = await api('GET', '/api/me');
+    storeUser(user);
+    currentUser = user;
+    launchApp();
+  } catch(e) {
+    showToast('User ID not found');
+    currentUser = null;
+  }
+}
+
+function launchApp() {
+  document.getElementById('onboard-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('my-code-display').textContent = currentUser.invite_code;
+  document.getElementById('profile-name').textContent = currentUser.name;
+  document.getElementById('profile-code').textContent = currentUser.invite_code;
+  document.getElementById('profile-uid').textContent = currentUser.id;
+  loadDashboard();
+}
+
+function copyUserId() {
+  navigator.clipboard.writeText(currentUser.id).catch(()=>{});
+  showToast('User ID copied');
+}
+
+// ─── Screens ──────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(name+'-screen').classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if (name==='dash') loadDashboard();
+  if (name==='friends') loadFriends();
+}
+
+function goFriends() { showScreen('friends'); }
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const d = await api('GET', '/api/dashboard');
+    const b = d.totalBalance;
+    const heroNum = document.getElementById('hero-num');
+    heroNum.textContent = (b>=0?'+':'')+b;
+    heroNum.className = 'hero-num '+(b>0?'pos':b<0?'neg':'');
+    document.getElementById('hero-sub').textContent =
+      b>0?'You\'re owed more than you owe':b<0?'You owe more than you\'re owed':'All square with everyone';
+    document.getElementById('dash-owe-you').textContent = d.oweYou;
+    document.getElementById('dash-owe-them').textContent = d.youOwe;
+    document.getElementById('dash-friend-count').textContent = d.friends.length;
+
+    // Leaderboard
+    const lb = document.getElementById('leaderboard-list');
+    if (!d.friends.length) {
+      lb.innerHTML = '<div class="empty" style="padding:1rem 0;font-size:13px;">Add friends to see the leaderboard</div>';
+    } else {
+      const maxAbs = Math.max(...d.friends.map(f=>Math.abs(f.balance)), 1);
+      const medals = ['gold','silver','bronze'];
+      lb.innerHTML = d.friends.map((f,i)=>{
+        const pct = Math.round((Math.abs(f.balance)/maxAbs)*100);
+        return `<div class="lb-item">
+          <div class="lb-rank ${i<3?medals[i]:''}">${i===0?'①':i===1?'②':i===2?'③':i+1}</div>
+          <div class="lb-bar-wrap">
+            <div class="lb-name">${f.name}</div>
+            <div class="lb-bar-bg"><div class="lb-bar ${bClass(f.balance)}" style="width:${pct}%"></div></div>
+          </div>
+          <div class="lb-pts ${bClass(f.balance)}">${bText(f.balance)} pts</div>
+        </div>`;
+      }).join('');
+    }
+
+    // Friend balance list
+    const dfl = document.getElementById('dash-friend-list');
+    if (!d.friends.length) {
+      dfl.innerHTML = '<div class="empty" style="padding:1rem 0;font-size:13px;">No friends yet</div>';
+    } else {
+      dfl.innerHTML = d.friends.map((f,i)=>`
+        <div class="friend-card" onclick="openDetail('${f.id}','${f.name}',${f.balance},${i})">
+          <div class="avatar ${colorFor(i)}">${initials(f.name)}</div>
+          <div class="friend-info">
+            <div class="friend-name">${f.name}</div>
+            <div class="friend-sub">${f.favour_count} favour${f.favour_count!==1?'s':''} logged</div>
+          </div>
+          <span class="badge ${bClass(f.balance)}">${bText(f.balance)} pts</span>
+        </div>`).join('');
+    }
+  } catch(e) { showToast('Could not load dashboard'); }
+}
+
+// ─── Friends ──────────────────────────────────────────────────────────────────
+async function loadFriends() {
+  try {
+    const [friends, pending] = await Promise.all([
+      api('GET', '/api/friends'),
+      api('GET', '/api/friends/pending')
+    ]);
+
+    const list = document.getElementById('friends-list');
+    if (!friends.length) {
+      list.innerHTML = '<div class="empty">No friends yet — share your invite code to connect</div>';
+    } else {
+      list.innerHTML = friends.map((f,i)=>`
+        <div class="friend-card" onclick="openDetail('${f.id}','${f.name}',${f.balance},${i})">
+          <div class="avatar ${colorFor(i)}">${initials(f.name)}</div>
+          <div class="friend-info">
+            <div class="friend-name">${f.name}</div>
+            <div class="friend-sub">${f.favour_count} favour${f.favour_count!==1?'s':''} logged</div>
+          </div>
+          <span class="badge ${bClass(f.balance)}">${bText(f.balance)} pts</span>
+        </div>`).join('');
+    }
+
+    const ps = document.getElementById('pending-section');
+    const pl = document.getElementById('pending-list');
+    if (pending.length) {
+      ps.style.display = 'block';
+      pl.innerHTML = pending.map(p=>`
+        <div class="pending-item">
+          <div><div style="font-size:14px;font-weight:500;">${p.name}</div><div style="font-size:12px;color:var(--muted);">Wants to connect</div></div>
+          <div>
+            <button class="accept-btn" onclick="respondToRequest(${p.id},'accept')">Accept</button>
+            <button class="decline-btn" onclick="respondToRequest(${p.id},'decline')">Decline</button>
+          </div>
+        </div>`).join('');
+    } else { ps.style.display = 'none'; }
+  } catch(e) { showToast('Could not load friends'); }
+}
+
+async function respondToRequest(id, action) {
+  try {
+    await api('PATCH', `/api/friends/${id}`, { action });
+    showToast(action === 'accept' ? 'Friend added!' : 'Request declined');
+    loadFriends();
+  } catch(e) { showToast(e.message); }
+}
+
+// ─── Detail ───────────────────────────────────────────────────────────────────
+async function openDetail(id, name, balance, colorIdx) {
+  currentFriendId = id;
+  document.getElementById('detail-avatar').className = `detail-avatar ${colorFor(colorIdx||0)}`;
+  document.getElementById('detail-avatar').textContent = initials(name);
+  document.getElementById('detail-name').textContent = name;
+  document.getElementById('detail-label').textContent = balance>0?'They owe you more':balance<0?'You owe them more':'All square';
+  const db = document.getElementById('detail-balance');
+  db.textContent = bText(balance); db.className = 'detail-balance '+(balance>0?'pos':balance<0?'neg':'');
+
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('detail-screen').classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+
+  try {
+    const favours = await api('GET', `/api/friends/${id}/favours`);
+    const oweYou = favours.filter(e=>e.direction===-1).reduce((s,e)=>s+e.points,0);
+    const oweThem = favours.filter(e=>e.direction===1).reduce((s,e)=>s+e.points,0);
+    document.getElementById('d-owe-you').textContent = oweYou;
+    document.getElementById('d-owe-them').textContent = oweThem;
+
+    const list = document.getElementById('log-list');
+    if (!favours.length) {
+      list.innerHTML = '<div class="empty" style="padding:1.5rem 0;">No favours logged yet</div>';
+    } else {
+      list.innerHTML = favours.map(e=>`
+        <div class="log-item">
+          <div><div class="log-desc">${e.description}</div><div class="log-date">${fmtDate(e.created_at)}</div></div>
+          <span class="log-pts ${e.direction===1?'log-pos':'log-neg'}">${e.direction===1?'+':'−'}${e.points}</span>
+        </div>`).join('');
+    }
+  } catch(e) { showToast('Could not load favours'); }
+}
+
+// ─── Invite ───────────────────────────────────────────────────────────────────
+function openInviteSheet() {
+  document.getElementById('join-error').style.display='none';
+  document.getElementById('join-code').value='';
+  document.getElementById('join-name').value='';
+  document.getElementById('invite-overlay').classList.add('open');
+}
+function copyCode() {
+  navigator.clipboard.writeText(currentUser.invite_code).catch(()=>{});
+  const btn=document.getElementById('copy-btn');
+  btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1800);
+}
+function shareVia(method) {
+  const msg=`Hey! I'm on Brownie Points — use my code ${currentUser.invite_code} to track favours with me.`;
+  if (method==='whatsapp') window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  else if (method==='sms') window.open('sms:?body='+encodeURIComponent(msg));
+  else { navigator.clipboard.writeText(msg).catch(()=>{}); showToast('Copied to clipboard'); }
+}
+async function sendFriendRequest() {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  const errEl = document.getElementById('join-error');
+  errEl.style.display='none';
+  if (!code) { errEl.textContent='Please enter a code.'; errEl.style.display='block'; return; }
+  try {
+    const res = await api('POST', '/api/friends/request', { invite_code: code });
+    closeOverlay('invite-overlay');
+    showToast(`Request sent to ${res.target.name}!`);
+  } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; }
+}
+
+// ─── Log favour ───────────────────────────────────────────────────────────────
+function openLogSheet() {
+  document.getElementById('log-sheet-sub').textContent = 'Logging a favour with '+document.getElementById('detail-name').textContent;
+  document.getElementById('log-desc').value='';
+  document.getElementById('log-pts').value='1';
+  document.getElementById('log-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('log-desc').focus(),50);
+}
+async function logFavour() {
+  const desc = document.getElementById('log-desc').value.trim();
+  const dir = parseInt(document.getElementById('log-dir').value);
+  const pts = Math.max(1, parseInt(document.getElementById('log-pts').value)||1);
+  if (!desc) return;
+  const btn = document.getElementById('log-save-btn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    await api('POST', `/api/friends/${currentFriendId}/favours`, { description:desc, points:pts, direction:dir });
+    closeOverlay('log-overlay');
+    showToast('Favour logged!');
+    const name = document.getElementById('detail-name').textContent;
+    const newBalance = (dir === -1 ? -pts : pts);
+    await openDetail(currentFriendId, name, newBalance, 0);
+  } catch(e) { showToast(e.message); }
+  btn.disabled=false; btn.textContent='Save';
+}
+
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) closeOverlay(o.id); });
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+const stored = loadStoredUser();
+if (stored) { currentUser = stored; launchApp(); }
+</script>
+</body>
+</html>

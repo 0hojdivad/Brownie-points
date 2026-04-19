@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: brownie-points
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /data/data.db
+    disk:
+      name: brownie-points-data
+      mountPath: /data
+      sizeGB: 1
