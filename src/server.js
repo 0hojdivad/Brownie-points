@@ -83,11 +83,10 @@ app.get('/api/me', requireUser, (req, res) => {
   res.json(req.user);
 });
 
-// Look up user by invite code (for connecting)
-app.get('/api/users/by-code/:code', requireUser, (req, res) => {
+// Look up user by invite code — public endpoint (no auth required, limited fields)
+app.get('/api/users/by-code/:code', (req, res) => {
   const user = db.prepare('SELECT id, name, invite_code FROM users WHERE invite_code = ?').get(req.params.code.toUpperCase());
   if (!user) return res.status(404).json({ error: 'Code not found' });
-  if (user.id === req.user.id) return res.status(400).json({ error: 'That is your own code' });
   res.json(user);
 });
 

@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Brownie Points</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
   :root {
@@ -100,6 +101,18 @@
   .toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;transform:translateX(-50%);background:var(--text);color:white;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:300;white-space:nowrap;}
   .toast.show{opacity:1;}
   .section-gap{margin-top:1.25rem;}
+  .donut-card{background:var(--text);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem;display:flex;align-items:center;gap:1.5rem;}
+  .donut-wrap{position:relative;width:120px;height:120px;flex-shrink:0;}
+  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+  .donut-num{font-size:22px;font-weight:300;font-family:'DM Mono',monospace;color:white;line-height:1;}
+  .donut-num.pos{color:#6FDEAB;} .donut-num.neg{color:#F4957F;}
+  .donut-label{font-size:10px;color:rgba(255,255,255,0.45);margin-top:3px;letter-spacing:0.04em;}
+  .donut-legend{flex:1;}
+  .donut-legend-item{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .donut-legend-item:last-child{margin-bottom:0;}
+  .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .legend-name{font-size:13px;color:rgba(255,255,255,0.7);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .legend-pts{font-size:13px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.9);font-weight:500;}
   /* Onboarding */
   #onboard-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
   .onboard-logo{font-size:48px;margin-bottom:1rem;}
@@ -109,6 +122,9 @@
   .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .error-msg{font-size:13px;color:var(--red);margin-top:8px;display:none;}
+  .invite-banner{background:var(--green-bg);border:0.5px solid rgba(30,122,82,0.3);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:1.5rem;text-align:center;display:none;}
+  .invite-banner-title{font-size:14px;font-weight:600;color:var(--green);margin-bottom:3px;}
+  .invite-banner-sub{font-size:13px;color:var(--green);opacity:0.75;}
 </style>
 </head>
 <body>
@@ -117,8 +133,12 @@
 <div id="onboard-screen">
   <div class="onboard-logo">🍫</div>
   <div class="onboard-title">Brownie Points</div>
-  <div class="onboard-sub">Track favours with friends.<br/>Who owes who — always know.</div>
+  <div class="onboard-sub" id="ob-sub">Track favours with friends.<br/>Who owes who — always know.</div>
   <div class="onboard-form">
+    <div class="invite-banner" id="invite-banner">
+      <div class="invite-banner-title" id="invite-banner-title">You've been invited!</div>
+      <div class="invite-banner-sub" id="invite-banner-sub">Enter your name and you'll be connected automatically.</div>
+    </div>
     <div class="field"><label>Your name</label><input id="ob-name" type="text" placeholder="e.g. Alex" /></div>
     <button class="btn-primary" style="width:100%;" onclick="register()" id="ob-btn">Get started</button>
     <div class="error-msg" id="ob-error"></div>
@@ -139,10 +159,17 @@
   <!-- DASHBOARD -->
   <div id="dash-screen" class="screen active">
     <div class="top-row"><h1>Dashboard</h1></div>
-    <div class="hero">
-      <div class="hero-label">Overall balance</div>
-      <div class="hero-num" id="hero-num">+0</div>
-      <div class="hero-sub" id="hero-sub">All square with everyone</div>
+    <div class="donut-card">
+      <div class="donut-wrap">
+        <canvas id="donut-chart"></canvas>
+        <div class="donut-center">
+          <div class="donut-num" id="hero-num">+0</div>
+          <div class="donut-label">overall</div>
+        </div>
+      </div>
+      <div class="donut-legend" id="donut-legend">
+        <div style="font-size:13px;color:rgba(255,255,255,0.4);">Add friends to see breakdown</div>
+      </div>
     </div>
     <div class="stat-row">
       <div class="stat-card"><div class="label">Owe you</div><div class="stat-val pos" id="dash-owe-you">0</div></div>
@@ -337,6 +364,28 @@ function showLogin() {
   document.getElementById('login-area').style.display = 'block';
 }
 
+// ─── Invite link detection ────────────────────────────────────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+const pendingInviteCode = urlParams.get('invite')?.toUpperCase() || null;
+
+if (pendingInviteCode) {
+  // Look up who invited them
+  (async () => {
+    try {
+      // We need a temp fetch without auth to resolve the inviter's name
+      const res = await fetch(API + '/api/users/by-code/' + pendingInviteCode);
+      if (res.ok) {
+        const inviter = await res.json();
+        document.getElementById('invite-banner').style.display = 'block';
+        document.getElementById('invite-banner-title').textContent = `${inviter.name} invited you!`;
+        document.getElementById('invite-banner-sub').textContent = 'Enter your name and you\'ll be connected automatically.';
+        document.getElementById('ob-sub').textContent = 'Join Brownie Points to track favours with ' + inviter.name + '.';
+        document.getElementById('ob-btn').textContent = 'Join & connect with ' + inviter.name;
+      }
+    } catch(e) {}
+  })();
+}
+
 async function register() {
   const name = document.getElementById('ob-name').value.trim();
   if (!name) return;
@@ -347,7 +396,16 @@ async function register() {
     const user = await api('POST', '/api/users', { name });
     storeUser(user);
     currentUser = user;
+    // Auto-send friend request if arrived via invite link
+    if (pendingInviteCode && pendingInviteCode !== user.invite_code) {
+      try {
+        await api('POST', '/api/friends/request', { invite_code: pendingInviteCode });
+      } catch(e) {} // Non-fatal — they can still use the app
+    }
+    // Clean up URL without reloading
+    window.history.replaceState({}, '', window.location.pathname);
     launchApp();
+    if (pendingInviteCode) showToast('Friend request sent automatically!');
   } catch(e) {
     document.getElementById('ob-error').textContent = e.message;
     document.getElementById('ob-error').style.display = 'block';
@@ -399,18 +457,65 @@ function showScreen(name) {
 function goFriends() { showScreen('friends'); }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+let donutChart = null;
+const DONUT_COLORS_POS = ['#6FDEAB','#5BC8F5','#A78BFA','#F9C74F','#90E0EF','#C8B6FF'];
+const DONUT_COLORS_NEG = ['#F4957F','#F4A261','#E76F51','#E63946','#FF6B6B','#FF9F1C'];
+
 async function loadDashboard() {
   try {
     const d = await api('GET', '/api/dashboard');
     const b = d.totalBalance;
     const heroNum = document.getElementById('hero-num');
     heroNum.textContent = (b>=0?'+':'')+b;
-    heroNum.className = 'hero-num '+(b>0?'pos':b<0?'neg':'');
-    document.getElementById('hero-sub').textContent =
-      b>0?'You\'re owed more than you owe':b<0?'You owe more than you\'re owed':'All square with everyone';
+    heroNum.className = 'donut-num '+(b>0?'pos':b<0?'neg':'');
     document.getElementById('dash-owe-you').textContent = d.oweYou;
     document.getElementById('dash-owe-them').textContent = d.youOwe;
     document.getElementById('dash-friend-count').textContent = d.friends.length;
+
+    // ── Donut chart ──
+    const canvas = document.getElementById('donut-chart');
+    const legend = document.getElementById('donut-legend');
+    const friends = d.friends.filter(f => f.balance !== 0);
+
+    if (donutChart) { donutChart.destroy(); donutChart = null; }
+
+    if (!friends.length) {
+      // Draw empty grey ring
+      donutChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: { datasets: [{ data: [1], backgroundColor: ['rgba(255,255,255,0.1)'], borderWidth: 0 }] },
+        options: { cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: false } }, animation: false }
+      });
+      legend.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.4);">Add friends to see breakdown</div>';
+    } else {
+      const posF = friends.filter(f=>f.balance>0);
+      const negF = friends.filter(f=>f.balance<0);
+      const segments = [...posF, ...negF];
+      const data = segments.map(f=>Math.abs(f.balance));
+      const colors = segments.map((f,i) =>
+        f.balance>0 ? DONUT_COLORS_POS[i%DONUT_COLORS_POS.length] : DONUT_COLORS_NEG[(i-posF.length)%DONUT_COLORS_NEG.length]
+      );
+
+      donutChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: { datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+        options: {
+          cutout: '72%',
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          animation: { duration: 600, easing: 'easeInOutQuart' }
+        }
+      });
+
+      // Legend — show top 4 friends max
+      const top = segments.slice(0, 4);
+      legend.innerHTML = top.map((f,i)=>`
+        <div class="donut-legend-item">
+          <div class="legend-dot" style="background:${colors[i]}"></div>
+          <div class="legend-name">${f.name}</div>
+          <div class="legend-pts" style="color:${colors[i]}">${bText(f.balance)}</div>
+        </div>`).join('') +
+        (segments.length > 4 ? `<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;">+${segments.length-4} more</div>` : '');
+    }
 
     // Leaderboard
     const lb = document.getElementById('leaderboard-list');
@@ -544,10 +649,14 @@ function copyCode() {
   btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1800);
 }
 function shareVia(method) {
-  const msg=`Hey! I'm on Brownie Points — use my code ${currentUser.invite_code} to track favours with me.`;
+  const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${currentUser.invite_code}`;
+  const msg = `Hey! Join me on Brownie Points — click this link to connect with me automatically:\n${inviteUrl}`;
   if (method==='whatsapp') window.open('https://wa.me/?text='+encodeURIComponent(msg));
   else if (method==='sms') window.open('sms:?body='+encodeURIComponent(msg));
-  else { navigator.clipboard.writeText(msg).catch(()=>{}); showToast('Copied to clipboard'); }
+  else {
+    navigator.clipboard.writeText(inviteUrl).catch(()=>{});
+    showToast('Invite link copied!');
+  }
 }
 async function sendFriendRequest() {
   const code = document.getElementById('join-code').value.trim().toUpperCase();
