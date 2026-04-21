@@ -33,10 +33,14 @@ open http://localhost:3000
 5. Go to **Settings → Networking → Generate Domain** to get your public URL
 
 **Environment variables** (optional):
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `3000` | Port the server listens on |
-| `DB_PATH` | `./data.db` | Path to SQLite database file |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Port the server listens on (default: 3000) |
+| `DB_PATH` | No | Path to SQLite database file (default: ./data.db) |
+| `RESEND_API_KEY` | Yes | API key from resend.com |
+| `FROM_EMAIL` | Yes | Verified sender email in Resend (e.g. noreply@yourdomain.com) |
+| `APP_URL` | Yes | Full public URL of your app (e.g. https://brownie-points.onrender.com) |
+| `JWT_SECRET` | Yes | Random secret for signing JWTs (generate with: `openssl rand -hex 32`) |
 
 > ⚠️ Railway's free tier uses ephemeral storage — the SQLite file resets on redeploy.
 > For persistent storage on Railway, add a **Railway Volume** and set `DB_PATH=/data/data.db`.
