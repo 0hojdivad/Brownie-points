@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data.db');
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production-' + crypto.randomBytes(16).toString('hex');
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Y1Cqpn1X_J1RmFvBexCNr1jjDx8fDNuTW';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@browniepoints.app';
 
 const resend = new Resend(RESEND_API_KEY);
@@ -156,21 +156,66 @@ app.post('/api/auth/send-link', async (req, res) => {
   }
 });
 
+// GET — show click-through page so email scanners don't consume the token
 app.get('/api/auth/verify', (req, res) => {
   const { token, invite } = req.query;
   if (!token) return res.redirect('/?auth_error=missing_token');
 
-  const row = db.prepare(`
-    SELECT mt.*, mt.user_id FROM magic_tokens mt
-    WHERE mt.token = ? AND mt.used = 0 AND mt.expires_at > datetime('now')
-  `).get(token);
+  const row = db.prepare(
+    "SELECT 1 FROM magic_tokens WHERE token = ? AND used = 0 AND expires_at > datetime('now')"
+  ).get(token);
+
+  if (!row) return res.redirect('/?auth_error=invalid_or_expired');
+
+  const inviteField = invite ? `<input type="hidden" name="invite" value="${invite}"/>` : '';
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sign in to Brownie Points</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap" rel="stylesheet"/>
+<style>
+  body{font-family:'Poppins',sans-serif;background:#3D1A00;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:1rem;}
+  .box{background:#FFFCF5;border-radius:20px;padding:2.5rem 2rem;text-align:center;max-width:340px;width:100%;border:3px solid #F5C400;box-shadow:0 6px 0 rgba(0,0,0,0.2);}
+  .logo{font-size:52px;margin-bottom:0.5rem;}
+  h1{font-size:20px;font-weight:800;color:#3D1A00;margin-bottom:8px;}
+  p{font-size:14px;color:#7A4E2D;font-weight:600;margin-bottom:1.75rem;line-height:1.5;}
+  button{width:100%;padding:14px;background:#F5C400;color:#3D1A00;border:none;border-radius:50px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:0 3px 0 #D4A800;}
+  .note{font-size:11px;color:#C8956C;margin-top:1rem;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">🍫</div>
+  <h1>Sign in to Brownie Points</h1>
+  <p>Click the button below to complete your sign-in.</p>
+  <form method="POST" action="/api/auth/verify">
+    <input type="hidden" name="token" value="${token}"/>
+    ${inviteField}
+    <button type="submit">Sign me in ✨</button>
+  </form>
+  <div class="note">This link expires in 15 minutes and can only be used once.</div>
+</div>
+</body>
+</html>`);
+});
+
+// POST — consume the token and redirect with JWT
+app.post('/api/auth/verify', express.urlencoded({ extended: false }), (req, res) => {
+  const { token, invite } = req.body;
+  if (!token) return res.redirect('/?auth_error=missing_token');
+
+  const row = db.prepare(
+    "SELECT mt.*, mt.user_id FROM magic_tokens mt WHERE mt.token = ? AND mt.used = 0 AND mt.expires_at > datetime('now')"
+  ).get(token);
 
   if (!row) return res.redirect('/?auth_error=invalid_or_expired');
   db.prepare('UPDATE magic_tokens SET used = 1 WHERE id = ?').run(row.id);
 
   const jwtToken = jwt.sign({ sub: row.user_id }, JWT_SECRET, { expiresIn: '30d' });
-  let redirect = `/?auth=${encodeURIComponent(jwtToken)}`;
-  if (invite) redirect += `&invite=${encodeURIComponent(invite)}`;
+  let redirect = '/?auth=' + encodeURIComponent(jwtToken);
+  if (invite) redirect += '&invite=' + encodeURIComponent(invite);
   res.redirect(redirect);
 });
 
