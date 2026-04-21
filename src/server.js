@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '..', 'data.db');
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production-' + crypto.randomBytes(16).toString('hex');
 const APP_URL = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, '');
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Y1Cqpn1X_J1RmFvBexCNr1jjDx8fDNuTW';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@browniepoints.app';
 
 const resend = new Resend(RESEND_API_KEY);
