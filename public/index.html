@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Brownie Points 🍫</title>
+<title>Brownie Points 🤝</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -227,6 +227,9 @@ h2 { font-size: 17px; font-weight: 700; }
 .check-box { width: 20px; height: 20px; border: 2px solid var(--border-med); border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
 .check-box.checked { background: var(--yellow); border-color: var(--yellow-dark); color: var(--brown); font-size: 11px; font-weight: 800; }
 
+.invite-tab { flex: 1; padding: 8px 4px; border: 2px solid var(--border-med); border-radius: var(--r-pill); font-size: 11px; font-weight: 800; color: var(--muted); background: var(--white); cursor: pointer; font-family: 'Poppins', sans-serif; text-align: center; transition: all 0.15s; }
+.invite-tab.active { background: var(--brown); color: var(--yellow); border-color: var(--brown); }
+
 /* ── ONBOARDING ── */
 #onboard-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; background: var(--brown); }
 .onboard-logo { font-size: 60px; margin-bottom: 0.5rem; animation: bounce 2s ease-in-out infinite; }
@@ -253,7 +256,7 @@ h2 { font-size: 17px; font-weight: 700; }
 
 <!-- ── ONBOARDING ─────────────────────────────────────────────── -->
 <div id="onboard-screen">
-  <div class="onboard-logo">🍫</div>
+  <div class="onboard-logo">🤝</div>
   <div class="onboard-title">Brownie Points!</div>
   <div class="onboard-sub" id="ob-sub">Track favours with friends.<br/>Who owes who — always know ✨</div>
   <div class="onboard-form">
@@ -289,7 +292,7 @@ h2 { font-size: 17px; font-weight: 700; }
   <!-- DASHBOARD -->
   <div id="dash-screen" class="screen active">
     <div class="top-row">
-      <h1>Brownie Points 🍫</h1>
+      <h1>Brownie Points 🤝</h1>
     </div>
     <div class="hero-card">
       <div class="donut-wrap">
@@ -441,27 +444,54 @@ h2 { font-size: 17px; font-weight: 700; }
   <div class="sheet">
     <div class="sheet-handle"></div>
     <h2>Add a friend 🤝</h2>
-    <p class="sheet-sub">Share your code or enter theirs to connect.</p>
-    <div class="label" style="margin-bottom:8px;">Your invite code</div>
-    <div class="code-box">
-      <span class="code-text" id="my-code-display"></span>
-      <button class="copy-btn" id="copy-btn" onclick="copyCode()">Copy 📋</button>
+
+    <!-- Tab switcher -->
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem;">
+      <button class="invite-tab active" id="tab-share" onclick="switchInviteTab('share')">Share code</button>
+      <button class="invite-tab" id="tab-email" onclick="switchInviteTab('email')">Invite by email</button>
+      <button class="invite-tab" id="tab-code" onclick="switchInviteTab('code')">Enter code</button>
     </div>
-    <div class="share-row">
-      <button class="share-pill" onclick="shareVia('whatsapp')">WhatsApp</button>
-      <button class="share-pill" onclick="shareVia('sms')">iMessage</button>
-      <button class="share-pill" onclick="shareVia('copy')">Copy link</button>
-    </div>
-    <div class="divider"><div class="divider-line"></div><span class="divider-text">or enter a friend's code</span><div class="divider-line"></div></div>
-    <div class="field" style="margin-bottom:10px;"><label>Friend's name (for your reference)</label><input id="join-name" type="text" placeholder="e.g. Sarah" /></div>
-    <div class="field" style="margin-bottom:0;"><label>Their invite code</label>
-      <div class="join-row">
-        <input id="join-code" type="text" placeholder="BP-XXXX" maxlength="7" oninput="this.value=this.value.toUpperCase()" />
-        <button class="join-btn" onclick="sendFriendRequest()">Connect 🔗</button>
+
+    <!-- Tab: Share code -->
+    <div id="invite-panel-share">
+      <div class="label" style="margin-bottom:8px;">Your invite code</div>
+      <div class="code-box">
+        <span class="code-text" id="my-code-display"></span>
+        <button class="copy-btn" id="copy-btn" onclick="copyCode()">Copy 📋</button>
       </div>
-      <div class="join-error" id="join-error"></div>
+      <div class="share-row">
+        <button class="share-pill" onclick="shareVia('whatsapp')">WhatsApp</button>
+        <button class="share-pill" onclick="shareVia('sms')">iMessage</button>
+        <button class="share-pill" onclick="shareVia('copy')">Copy link</button>
+      </div>
     </div>
-    <div class="btn-row"><button class="btn-cancel" onclick="closeOverlay('invite-overlay')" style="flex:1;">Close</button></div>
+
+    <!-- Tab: Invite by email -->
+    <div id="invite-panel-email" style="display:none;">
+      <p class="sheet-sub" style="margin-bottom:1rem;">Send your friend an invite email — they'll be connected to you automatically when they sign up.</p>
+      <div class="field"><label>Friend's name</label><input id="ie-name" type="text" placeholder="e.g. Sarah" /></div>
+      <div class="field"><label>Friend's email</label><input id="ie-email" type="email" placeholder="sarah@example.com" /></div>
+      <div class="join-error" id="ie-error"></div>
+      <div id="ie-success" style="display:none;font-size:13px;font-weight:700;color:#2E7D32;margin-top:8px;">✅ Invite sent!</div>
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn-primary" onclick="sendEmailInvite()" id="ie-btn">Send invite ✉️</button>
+      </div>
+    </div>
+
+    <!-- Tab: Enter code -->
+    <div id="invite-panel-code" style="display:none;">
+      <p class="sheet-sub" style="margin-bottom:1rem;">Got a friend's invite code? Enter it below.</p>
+      <div class="field" style="margin-bottom:10px;"><label>Friend's name (for your reference)</label><input id="join-name" type="text" placeholder="e.g. Sarah" /></div>
+      <div class="field" style="margin-bottom:0;"><label>Their invite code</label>
+        <div class="join-row">
+          <input id="join-code" type="text" placeholder="BP-XXXX" maxlength="7" oninput="this.value=this.value.toUpperCase()" />
+          <button class="join-btn" onclick="sendFriendRequest()">Connect 🔗</button>
+        </div>
+        <div class="join-error" id="join-error"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:1.25rem;"><button class="btn-cancel" onclick="closeOverlay('invite-overlay')" style="flex:1;">Close</button></div>
   </div>
 </div>
 
@@ -1000,6 +1030,40 @@ async function logFavour() {
     await openDetail(currentFriendId,name,dir===1?pts:-pts,0,prevScreen);
   } catch(e) { showToast(e.message); }
   btn.disabled=false; btn.textContent='Save 💾';
+}
+
+function switchInviteTab(tab) {
+  ['share','email','code'].forEach(t => {
+    document.getElementById('invite-panel-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+}
+
+async function sendEmailInvite() {
+  const email = document.getElementById('ie-email').value.trim();
+  const name = document.getElementById('ie-name').value.trim();
+  const errEl = document.getElementById('ie-error');
+  const successEl = document.getElementById('ie-success');
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid email address.';
+    errEl.style.display = 'block'; return;
+  }
+  const btn = document.getElementById('ie-btn');
+  btn.innerHTML = '<span class="spinner"></span>Sending…'; btn.disabled = true;
+  try {
+    await api('POST', '/api/friends/invite-email', { to_email: email, to_name: name || undefined });
+    document.getElementById('ie-email').value = '';
+    document.getElementById('ie-name').value = '';
+    successEl.style.display = 'block';
+    setTimeout(() => { successEl.style.display = 'none'; }, 3000);
+    showToast('Invite sent to ' + email + '! 🎉');
+  } catch(e) {
+    errEl.textContent = e.message || 'Failed to send — please try again.';
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Send invite ✉️';
 }
 
 function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }

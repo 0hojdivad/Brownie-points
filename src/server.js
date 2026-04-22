@@ -236,6 +236,41 @@ app.get('/api/users/by-code/:code', (req, res) => {
   res.json(user);
 });
 
+// Send an invite email to a friend
+app.post('/api/friends/invite-email', requireAuth, async (req, res) => {
+  const { to_email, to_name } = req.body;
+  if (!to_email || !to_email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+
+  const inviteUrl = APP_URL + '/?invite=' + req.user.invite_code;
+  const senderName = req.user.name || req.user.email.split('@')[0];
+  const recipientName = (to_name && to_name.trim()) ? to_name.trim() : to_email.split('@')[0];
+
+  if (!RESEND_API_KEY) {
+    console.log('\n Invite email (dev mode) to ' + to_email + ': ' + inviteUrl + '\n');
+    return res.json({ message: 'Dev mode: invite link printed to server logs', dev_link: inviteUrl });
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: to_email,
+      subject: senderName + ' is inviting you to Brownie Points',
+      html: '<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;background:#3D1A00;border-radius:16px;">'
+        + '<p style="font-size:40px;margin:0 0 8px;">🤝</p>'
+        + '<h2 style="font-size:22px;font-weight:800;margin:0 0 8px;color:#F5C400;">You've been invited!</h2>'
+        + '<p style="color:rgba(245,196,0,0.75);margin:0 0 8px;font-size:15px;line-height:1.5;"><strong style="color:#F5C400;">' + senderName + '</strong> wants to track favours with you on Brownie Points.</p>'
+        + '<p style="color:rgba(245,196,0,0.6);margin:0 0 24px;font-size:14px;line-height:1.5;">Hi ' + recipientName + '! Click below to join and connect with ' + senderName + ' automatically.</p>'
+        + '<a href="' + inviteUrl + '" style="display:inline-block;background:#F5C400;color:#3D1A00;padding:14px 32px;border-radius:50px;text-decoration:none;font-size:15px;font-weight:800;">Accept invite 🤝</a>'
+        + '<p style="color:rgba(245,196,0,0.35);font-size:12px;margin-top:24px;">Brownie Points helps friends track favours. If you weren't expecting this, you can safely ignore it.</p>'
+        + '</div>'
+    });
+    res.json({ message: 'Invite sent to ' + to_email });
+  } catch (e) {
+    console.error('Resend invite error:', e);
+    res.status(500).json({ error: 'Failed to send invite email' });
+  }
+});
+
 // ─── Friends ──────────────────────────────────────────────────────────────────
 
 app.post('/api/friends/request', requireAuth, (req, res) => {
