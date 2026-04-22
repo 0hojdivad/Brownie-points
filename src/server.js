@@ -257,11 +257,11 @@ app.post('/api/friends/invite-email', requireAuth, async (req, res) => {
       subject: senderName + ' is inviting you to Brownie Points',
       html: '<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:2rem;background:#3D1A00;border-radius:16px;">'
         + '<p style="font-size:40px;margin:0 0 8px;">🤝</p>'
-        + '<h2 style="font-size:22px;font-weight:800;margin:0 0 8px;color:#F5C400;">You've been invited!</h2>'
+        + '<h2 style="font-size:22px;font-weight:800;margin:0 0 8px;color:#F5C400;">You\'ve been invited!</h2>'
         + '<p style="color:rgba(245,196,0,0.75);margin:0 0 8px;font-size:15px;line-height:1.5;"><strong style="color:#F5C400;">' + senderName + '</strong> wants to track favours with you on Brownie Points.</p>'
         + '<p style="color:rgba(245,196,0,0.6);margin:0 0 24px;font-size:14px;line-height:1.5;">Hi ' + recipientName + '! Click below to join and connect with ' + senderName + ' automatically.</p>'
         + '<a href="' + inviteUrl + '" style="display:inline-block;background:#F5C400;color:#3D1A00;padding:14px 32px;border-radius:50px;text-decoration:none;font-size:15px;font-weight:800;">Accept invite 🤝</a>'
-        + '<p style="color:rgba(245,196,0,0.35);font-size:12px;margin-top:24px;">Brownie Points helps friends track favours. If you weren't expecting this, you can safely ignore it.</p>'
+        + '<p style="color:rgba(245,196,0,0.35);font-size:12px;margin-top:24px;">Brownie Points helps friends track favours. If you weren\'t expecting this, you can safely ignore it.</p>'
         + '</div>'
     });
     res.json({ message: 'Invite sent to ' + to_email });
